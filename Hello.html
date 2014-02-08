@@ -10,44 +10,45 @@
     <script type="text/javascript"
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBspUEDd0uX8Il_1rp3Jri5bju2THqfezE&sensor=false">
     </script>
-    <script type="text/javascript"
-        src="http://code.jquery.com/jquery-1.11.0.min.js"
-    </script>
     <script type="text/javascript">
-        // MDEzMTU2NjM5MDEzOTE4MzE1MjA5YjY1YQ001 - NPR api key
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(success, noDefault);
-        } else {
-            error('not supported');
-        }
-        var map;
-        function success(position) {
-            var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            var mapOptions = {
-              center: latlng,
-              zoom: 15
-            };
-            map = new google.maps.Map(document.getElementById("map-canvas"),
-                mapOptions);
+			var map;
+      function initialize() {
+        var mapOptions = {
+          center: new google.maps.LatLng(-34.397, 150.644),
+          zoom: 8
         };
-        function noDefault() {
-            
-            var mapOptions = {
-                  center: new google.maps.LatLng(0,0),
-                  zoom: 2
-                };
-            map = new google.maps.Map(document.getElementById("map-canvas"),
-                mapOptions);
-        };
-      
+        map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+      }
+			function getCountry() {
+				if(map.getZoom() >= 9) { // fiddle with this number
+					return 'World';
+				}
+				var country;
+				var latlang = map.getCenter();
+				var geocoder = new google.maps.Geocoder();
+				geocoder.geocode({'latLng': latlang}, function(results, status) {
+					if (status == google.maps.GeocoderStatus.OK) {
+				     if (results[1]) {
+							country = results[1].formatted_address;
+						}
+						else {
+							country = 'World';
+						}
+					}
+					else {
+						country = 'World';
+					}
+				});
+				alert(country);
+				return country;
+			}
       google.maps.event.addDomListener(window, 'load', initialize);
+			getCountry();
     </script>
-    
   </head>
   <body>
-    <div id="news">
-    </div>
-    <div style="border:30px; height:80%; width:80%" id="map-canvas"/>
+    <div id="map-canvas"/>
   </body>
 </html>
-<!-- TESTTEST -->
+
