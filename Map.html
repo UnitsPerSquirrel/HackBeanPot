@@ -17,6 +17,7 @@
             noDefault();
         }
         var map;
+				var found = false;
         function success(position) {
             var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
             var mapOptions = {
@@ -26,9 +27,9 @@
             map = new google.maps.Map(document.getElementById("map-canvas"),
                 mapOptions);
             google.maps.event.addListener(map, 'tilesloaded', function() {
-                getCountry(map.getCenter());
+                getCountry(map.getBounds());
             });
-            
+            google.maps.event.addListener(map, 'dragend', function() { found = false;});
         };
         function noDefault(error) {
             var mapOptions = {
@@ -40,23 +41,47 @@
             
         };
         // alert country based on latlong
-      	function getCountry(latlong) {            
+      	function getCountry(bounds) {
+						var NE = bounds.getNorthEast();
+						var SW = bounds.getSouthWest();
             var geocoder = new google.maps.Geocoder();
-            geocoder.geocode({'latLng': latlong}, function(results, status) {
-                if (status == google.maps.GeocoderStatus.OK) {
-                    if (results[1]) {
-                        country = results[1].formatted_address;
-                    } else {
-                        country = 'World';
-                    }
-                } else {
-                    country = 'World';
-                }
-                updateStories(country.match(/\w+$/)[0]); // call stories
-            });            
+						var minLat = NE.lat() < SW.lat() ? NE.lat() : SW.lat();
+						var minLng = NE.lng() < SW.lng() ? NE.lng() : SW.lng();
+						var latDist = NE.lat() - SW.lat();
+						var lngDist = NE.lng() - SW.lng();
+						latDist = Math.max(latDist, -1*latDist);
+						lngDist = Math.max(lngDist, -1*lngDist);
+						var latlong;
+						for(var i = 0; i <= 9; i++) {
+							for(var j = 0; j <= 9; j++) {
+								latlong = new google.maps.LatLng(minLat+(i/9.0)*latDist, minLng+(j/9.0)*lngDist, true);
+		            geocoder.geocode({'latLng': latlong}, function(results, status) {
+	           	    if (status == google.maps.GeocoderStatus.OK) {
+	           	    	if (results[1]) {
+											found = true;
+    	                updateStories((results[1].formatted_address).match(/[\w\s]+$/)[0]);
+											//throw new Error(latlong.lat() + ', ' + latlong.lng() + ', ' + results[1].formatted_address);
+    	  	 	        }
+										else {
+											//alert('No result');
+										}	
+    	       	    }
+									else {
+										//alert('Status error');
+									}							
+	      	      });
+							}
+						}
+						if(!found) {
+							updateStories('World');
+						}
+						else {
+							//window.setTimeout(function(){found = false;}, 8000); // fix this
+						}        
        }
       // google.maps.event.addDomListener(window, 'load', initialize);
       function updateStories(place){
+					//alert(place);
           // given a place, display (up to) 10 NPR stories with it
           $.ajax({
              url:"http://api.npr.org/query?apiKey=MDEzMTU2NjM5MDEzOTE4MzE1MjA5YjY1YQ001&searchType=mainText&output=JSON&searchTerm="+place,
@@ -73,6 +98,7 @@
                     }
                     if (i == 0) {
                         $("#news").empty();
+												$("#news").text("Location: " + place);
                     }
                     $("#news").append("<li><a href='"+url+"'>"+title+"</a><br/>"+miniTeaser+"</li>");                
                  });          
