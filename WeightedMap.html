@@ -8,7 +8,13 @@
       #map-canvas { height: 100% }
     </style>
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.0.min.js"> </script>
+		<script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBspUEDd0uX8Il_1rp3Jri5bju2THqfezE&sensor=false"></script>
+ 		<script>
+			$(function() {
+				$( "#news_tabs" ).accordion({heightStyle: "content"});
+			});
+		</script>
     <script type="text/javascript">
         
         if (navigator.geolocation) {
@@ -18,6 +24,7 @@
         }
         var map;
 				var found = false;
+				var sects = 1;
         function success(position) {
             var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
             var mapOptions = {
@@ -28,7 +35,7 @@
                 mapOptions);
             google.maps.event.addListener(map, 'tilesloaded', function() {
                 getCountry(map.getBounds());
-            });
+            });						
             google.maps.event.addListener(map, 'dragend', function() { found = false;});
         };
         function noDefault(error) {
@@ -42,6 +49,7 @@
         };
         // alert country based on latlong
       	function getCountry(bounds) {
+						sects = 1;
 						//alert("Call");
 						//console.log("Call");
 						var countries = [];
@@ -66,13 +74,10 @@
 											if(index == -1) {
 												countries.push((results[1].formatted_address).match(/[\w\s]+$/)[0]);
 												counts.push(1);
-												//console.log("Country: " + countries[countries.length-1]);
 											}
 											else {
 												counts[index]++;
 											}
-    	                //updateStories((results[1].formatted_address).match(/[\w\s]+$/)[0]);
-											//throw new Error(latlong.lat() + ', ' + latlong.lng() + ', ' + results[1].formatted_address);
     	  	 	        }
 										else {
 											//alert('No result');
@@ -109,18 +114,20 @@
 									console.log(countries[c] +", "  + counts[c]);
 									updateStories(countries[c], counts[c]);
 								}
-							}}, 1000);						     
+							}}, 1000);
+					sects = 1;					     
        }
       // google.maps.event.addDomListener(window, 'load', initialize);
       function updateStories(place, count){
 					//alert(place);
           // given a place, display (up to) 10 NPR stories with it
+					var sc = sects;
           $.ajax({
              url:"http://api.npr.org/query?apiKey=MDEzMTU2NjM5MDEzOTE4MzE1MjA5YjY1YQ001&searchType=mainText&output=JSON&searchTerm="+place,
              dataType: 'jsonp', 
              success:function(data){
                  // do stuff with json (in this case an array)
-                 $("#news").text("No stories found for "+place+". Please change map position and try again.");
+                 $("#tabs-"+sc).text("No stories found for "+place+". Please change map position and try again.");
                  $.each(data['list']['story'], function (i, item) {
                     title = item['title']['$text']; // get the text
                     url = item['link'][0]['$text'];
@@ -129,10 +136,10 @@
                         miniTeaser = item['teaser']['$text'];
                     }
                     if (i == 0) {
-                        $("#news").empty();
-												$("#news").text("Location: " + place);
+                        $("#tabs-"+sc).empty();
+												$("#tabs-"+sc).text("Location: " + place);
                     }
-                    $("#news").append("<li><a href='"+url+"'>"+title+"</a><br/>"+miniTeaser+"</li>");                
+                    $("#tabs-"+sc).append("<li><a href='"+url+"'>"+title+"</a><br/>"+miniTeaser+"</li>");                
                  });          
                  
              },
@@ -140,6 +147,7 @@
                  alert("Could not contact NPR API");
              }
         });
+				sects++;
     }
     
     
@@ -147,9 +155,22 @@
     
   </head>
   <body>
-    <div style="float:left; width:30%; overflow-y:scroll; height:100%">
-    <ul id ="news">
-    </ul>
+    <div id="news_tabs" style="float:left; width:30%; overflow-y:scroll; height:100%">
+    	<h3>Section 1</h3>
+			<div id="tabs-1">
+			</div>
+			<h3>Section 2</h3>
+			<div id="tabs-2">
+			</div>
+			<h3>Section 3</h3>
+			<div id="tabs-3">
+			</div>
+			<h3>Section 4</h3>
+			<div id="tabs-4">
+			</div>
+			<h3>Section 5</h3>
+			<div id="tabs-5">
+			</div>
     </div>
     <div style="float:right; width:70%" id="map-canvas"/>
   </body>
